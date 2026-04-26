@@ -47,8 +47,8 @@ sudo systemctl restart docker
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/USERNAME/REPO.git
-cd REPO
+https://github.com/taeyoung-ko/hci-paper-semantic-search.git
+cd hci-paper-semantic-search
 ```
 
 ### 2. Bring up the vLLM services
