@@ -1,0 +1,98 @@
+services:
+  embedder:
+    image: vllm/vllm-openai:v0.14.0
+    container_name: vllm-embedder
+    command:
+      - --model
+      - Qwen/Qwen3-Embedding-0.6B
+      - --port
+      - "8000"
+      - --max-model-len
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.10"
+      - --served-model-name
+      - qwen3-embed
+    ipc: host
+    shm_size: "8gb"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/v1/models || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 240s
+      retries: 5
+
+  reranker:
+    image: vllm/vllm-openai:v0.14.0
+    container_name: vllm-reranker
+    command:
+      - --model
+      - Qwen/Qwen3-Reranker-8B
+      - --port
+      - "8000"
+      - --runner
+      - pooling
+      - --max-model-len
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.30"
+      - --served-model-name
+      - qwen3-rerank
+      - --hf-overrides
+      - '{"architectures":["Qwen3ForSequenceClassification"],"classifier_from_token":["no","yes"],"is_original_qwen3_reranker":true}'
+    ipc: host
+    shm_size: "8gb"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/v1/models || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 600s
+      retries: 5
+
+  app:
+    build: ./app
+    container_name: paper-search-app
+    environment:
+      EMBEDDER_URL: "http://embedder:8000/v1"
+      RERANKER_URL: "http://reranker:8000/v1"
+      INDEX_DIR: "/app/index"
+      DATA_PATH: "/app/data/sigchi_conf_doi.jsonl"
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./data:/app/data:ro
+      - paper_index:/app/index
+    depends_on:
+      embedder:
+        condition: service_healthy
+      reranker:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hf_cache:
+  paper_index:

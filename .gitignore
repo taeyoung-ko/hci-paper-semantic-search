@@ -1,0 +1,29 @@
+# Bulk metadata-collection artifacts
+*.bak
+*.xlsx
+*.csv
+.collect_checkpoint.json
+.prefix_scan_cache/
+
+# Notebook / scratch
+*.ipynb
+*.ipynb_checkpoints/
+
+# Standalone scripts not part of the search app
+get_metadata.py
+
+# Build artifacts in named docker volumes
+hf_cache/
+index/
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local env
+.env
