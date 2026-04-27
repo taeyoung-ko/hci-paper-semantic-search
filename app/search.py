@@ -1,4 +1,4 @@
-"""retrieval (0.6B) + filter + rerank (8B) 통합 검색."""
+"""Mode-aware retrieval (0.6B) + filter + rerank (8B)."""
 import json
 import os
 from pathlib import Path
@@ -6,16 +6,21 @@ from pathlib import Path
 import faiss
 import numpy as np
 
-from api_clients import embed_query, rerank
+from api_clients import embed_query, rerank, MODES, DEFAULT_MODE
 
 INDEX_DIR = Path(os.environ["INDEX_DIR"])
 
-_index = faiss.read_index(str(INDEX_DIR / "sigchi.faiss"))
+# Lazy-load all mode indexes at import; small enough to fit in memory.
+_indexes: dict[str, faiss.Index] = {}
+for mode in MODES:
+    path = INDEX_DIR / f"sigchi_{mode}.faiss"
+    if path.exists():
+        _indexes[mode] = faiss.read_index(str(path))
+    else:
+        print(f"[search] WARNING: missing index for mode={mode}: {path}")
+
 with (INDEX_DIR / "sigchi_meta.jsonl").open(encoding="utf-8") as f:
     _papers = [json.loads(l) for l in f]
-
-# FAISS의 IndexFlatIP에서 reconstruct로 원본 벡터 복원 가능
-# (정규화된 상태로 저장되어 있음)
 
 
 def _doc_text(p: dict) -> str:
@@ -49,43 +54,48 @@ def _passes_filter(p: dict, allowed_venues: set[str] | None,
 
 
 def search(query: str,
+           mode: str = DEFAULT_MODE,
            allowed_venues: list[str] | None = None,
            year_min: int = 0,
            year_max: int = 9999,
            retrieve_k: int = 1000,
            rerank_k: int = 100) -> dict:
-    """
-    Returns: {
-        "query_embedding": np.ndarray (D,),
-        "results": [paper dicts with rerank_score, embed_score, _vec],
-    }
-    The "_vec" field on each paper is its 1024-d normalized embedding,
-    used downstream for graph layout. It is NOT meant for serialization.
+    """Two-stage mode-aware semantic search.
+
+    Returns:
+        {"query_embedding": np.ndarray, "results": [paper dicts]}
     """
     if not query.strip():
         return {"query_embedding": None, "results": []}
+    if mode not in MODES:
+        raise ValueError(f"Unknown mode: {mode}")
+    if mode not in _indexes:
+        raise RuntimeError(
+            f"Index for mode={mode} not loaded. Did you run build_index.py?"
+        )
 
     venue_set = set(allowed_venues) if allowed_venues else None
+    index = _indexes[mode]
 
-    # Stage 1: embed query
-    q_vec = np.asarray(embed_query(query), dtype="float32")
+    # Stage 1: query embedding (mode-aware)
+    q_vec = np.asarray(embed_query(query, mode=mode), dtype="float32")
     q_norm = q_vec.copy()
     faiss.normalize_L2(q_norm.reshape(1, -1))
 
-    # Stage 2 + 3 + adaptive widening
+    # Stage 2 + 3: FAISS retrieve + filter (with adaptive widening)
     target_survivors = max(rerank_k, 100)
-    n_total = _index.ntotal
+    n_total = index.ntotal
     k = min(retrieve_k, n_total)
     survivors: list[dict] = []
 
     while True:
-        emb_scores, idxs = _index.search(q_norm.reshape(1, -1), k)
+        emb_scores, idxs = index.search(q_norm.reshape(1, -1), k)
         survivors = []
-        seen_ids: set[int] = set()
+        seen: set[int] = set()
         for s, i in zip(emb_scores[0], idxs[0]):
-            if i < 0 or int(i) in seen_ids:
+            if i < 0 or int(i) in seen:
                 continue
-            seen_ids.add(int(i))
+            seen.add(int(i))
             p = _papers[int(i)]
             if not _passes_filter(p, venue_set, year_min, year_max):
                 continue
@@ -100,19 +110,19 @@ def search(query: str,
     if not survivors:
         return {"query_embedding": q_norm, "results": []}
 
-    # Stage 4: rerank
+    # Stage 4: rerank (mode-aware)
     docs = [_doc_text(p) for p in survivors]
-    rerank_scores = rerank(query, docs, batch_size=32)
+    rerank_scores = rerank(query, docs, mode=mode, batch_size=32)
     for p, s in zip(survivors, rerank_scores):
         p["rerank_score"] = s
 
-    # Stage 5: top-k by rerank_score
+    # Stage 5: top-K
     survivors.sort(key=lambda x: x["rerank_score"], reverse=True)
     top = survivors[:rerank_k]
 
     # Attach embedding vectors for graph layout
     for p in top:
-        v = _index.reconstruct(p["_idx"])
+        v = index.reconstruct(p["_idx"])
         p["_vec"] = np.asarray(v, dtype="float32")
 
     return {"query_embedding": q_norm, "results": top}
