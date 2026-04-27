@@ -26,44 +26,43 @@ Local deployment via Docker Compose with three services: `embedder` and `reranke
 
 Verify your setup:
 
-```bashnvidia-smi                              # driver + GPU visible
-docker --version                        # Docker installed
-docker compose version                  # Compose v2 plugin installed
-docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
-# GPU passthrough works
+    nvidia-smi
+    docker --version
+    docker compose version
+    docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
 
 If the last command fails, install the NVIDIA Container Toolkit:
 
-```bashsudo apt install -y nvidia-container-toolkit
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
+    sudo apt install -y nvidia-container-toolkit
+    sudo nvidia-ctk runtime configure --runtime=docker
+    sudo systemctl restart docker
 
 ## Setup
 
 ### 1. Clone the repository
 
-```bashgit clone https://github.com/taeyoung-ko/hci-paper-semantic-search.git
-cd hci-paper-semantic-search
+    git clone https://github.com/taeyoung-ko/hci-paper-semantic-search.git
+    cd hci-paper-semantic-search
 
 ### 2. Bring up the vLLM services
 
-```bashdocker compose up -d embedder reranker
+    docker compose up -d embedder reranker
 
 The first run downloads ~16 GB of model weights into a docker-managed volume. Wait until both services report `(healthy)`:
 
-```bashdocker compose ps
+    docker compose ps
 
 This usually takes 5–10 minutes for the embedder and 8–15 minutes for the reranker (8B model + CUDA graph compilation).
 
 ### 3. Build the FAISS index
 
-```bashdocker compose run --rm app python build_index.py
+    docker compose run --rm app python build_index.py
 
 Encodes every paper in `data/sigchi_conf_doi.jsonl` (about 1 minute on a recent GPU) and saves the FAISS index into a docker-managed volume. Run this once.
 
 ### 4. Launch the search UI
 
-```bashdocker compose up -d
+    docker compose up -d
 
 Open <http://localhost:7860> in your browser.
 
@@ -91,24 +90,25 @@ After warmup, a search typically takes 10–30 seconds (most of it is the rerank
 
 ## Common commands
 
-```bashStop everything (preserves model cache and index)
-docker compose stopResume
-docker compose startTear down containers (keeps volumes)
-docker compose downWipe everything including model cache (rare; forces re-download)
-docker compose down -vWatch logs
-docker compose logs -fWatch GPU usage
-watch -n 1 nvidia-smi
+    docker compose stop          # stop (preserves model cache and index)
+    docker compose start         # resume
+    docker compose down          # tear down containers (keeps volumes)
+    docker compose down -v       # wipe everything including model cache
+    docker compose logs -f       # watch logs
+    watch -n 1 nvidia-smi        # watch GPU usage
 
-## ArchitectureBrowser ──► Gradio UI (app)
-│
-├──► /v1/embeddings   Qwen3-Embedding-0.6B (vLLM)
-│       └─► FAISS top-K retrieval (with venue filter)
-│
-└──► /v1/score        Qwen3-Reranker-8B (vLLM)
-└─► top-N results (cross-encoder rescored)
-│
-├─► List view  (ranked cards)
-└─► Graph view (UMAP + radial layout)
+## Architecture
+
+    Browser ──► Gradio UI (app)
+                  │
+                  ├──► /v1/embeddings   Qwen3-Embedding-0.6B (vLLM)
+                  │       └─► FAISS top-K retrieval (with venue filter)
+                  │
+                  └──► /v1/score        Qwen3-Reranker-8B (vLLM)
+                           └─► top-N results (cross-encoder rescored)
+                                  │
+                                  ├─► List view  (ranked cards)
+                                  └─► Graph view (UMAP + radial layout)
 
 ## Data
 
@@ -119,11 +119,12 @@ watch -n 1 nvidia-smi
 **Reranker scores are all near 0.5** — vLLM regression bug. Pin the image to `vllm/vllm-openai:v0.14.0` (the version specified in `compose.yaml`).
 
 **`Restarting (1)` on the app container** — usually a Python dependency conflict. Check logs:
-```bashdocker compose logs --tail=80 app
+
+    docker compose logs --tail=80 app
 
 **`chown ... operation not permitted`** — happens on NFS mounts. The `compose.yaml` already uses Docker-managed named volumes (`hf_cache`, `paper_index`) to avoid this.
 
-**Graph tab is blank** — the iframe-embedded plotly view depends on inline scripts. If you see a blank panel, hard-reload the page (Ctrl+Shift+R) and check the browser console for CSP errors.
+**Graph tab is blank** — the iframe-embedded plotly view depends on inline scripts. Hard-reload the page (Ctrl+Shift+R) and check the browser console for CSP errors.
 
 **First search after long idle hangs for ~30s** — vLLM CUDA graph cache may have been evicted. Subsequent searches will be fast again.
 
