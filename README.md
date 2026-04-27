@@ -2,8 +2,8 @@
 
 Two-stage semantic search over 13,488 papers from seven major HCI conferences (CHI, UIST, CSCW, DIS, IUI, RecSys, UMAP).
 
-- **Retrieval** — Qwen3-Embedding-0.6B → FAISS top-1000
-- **Reranking** — Qwen3-Reranker-8B (cross-encoder) → top-100
+- **Retrieval** — Qwen3-Embedding-0.6B → FAISS top-1000 (default, tunable)
+- **Reranking** — Qwen3-Reranker-8B (cross-encoder) → top-100 (default, tunable)
 
 Local deployment via Docker Compose with three services: `embedder` and `reranker` (both vLLM), plus `app` (Gradio UI + FAISS).
 
@@ -26,102 +26,89 @@ Local deployment via Docker Compose with three services: `embedder` and `reranke
 
 Verify your setup:
 
-```bash
-nvidia-smi                              # driver + GPU visible
+```bashnvidia-smi                              # driver + GPU visible
 docker --version                        # Docker installed
 docker compose version                  # Compose v2 plugin installed
 docker run --rm --gpus all nvidia/cuda:12.8.0-base-ubuntu22.04 nvidia-smi
-                                        # GPU passthrough works
-```
+# GPU passthrough works
 
 If the last command fails, install the NVIDIA Container Toolkit:
 
-```bash
-sudo apt install -y nvidia-container-toolkit
+```bashsudo apt install -y nvidia-container-toolkit
 sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
-```
 
 ## Setup
 
 ### 1. Clone the repository
 
-```bash
-https://github.com/taeyoung-ko/hci-paper-semantic-search.git
+```bashgit clone https://github.com/taeyoung-ko/hci-paper-semantic-search.git
 cd hci-paper-semantic-search
-```
 
 ### 2. Bring up the vLLM services
 
-```bash
-docker compose up -d embedder reranker
-```
+```bashdocker compose up -d embedder reranker
 
 The first run downloads ~16 GB of model weights into a docker-managed volume. Wait until both services report `(healthy)`:
 
-```bash
-docker compose ps
-```
+```bashdocker compose ps
 
 This usually takes 5–10 minutes for the embedder and 8–15 minutes for the reranker (8B model + CUDA graph compilation).
 
 ### 3. Build the FAISS index
 
-```bash
-docker compose run --rm app python build_index.py
-```
+```bashdocker compose run --rm app python build_index.py
 
 Encodes every paper in `data/sigchi_conf_doi.jsonl` (about 1 minute on a recent GPU) and saves the FAISS index into a docker-managed volume. Run this once.
 
 ### 4. Launch the search UI
 
-```bash
-docker compose up -d
-```
+```bashdocker compose up -d
 
 Open <http://localhost:7860> in your browser.
+
+When the app first launches, an orange banner appears at the top of the page:
+
+> ⏳ Warming up the search engine — first launch takes ~30s.
+
+This is a one-time numba/UMAP JIT warmup that runs in the background. The banner disappears automatically (within ~30s) and search becomes available. If you click Search before warmup finishes, the same message is shown in the results area.
 
 ## Usage
 
 1. Type a natural-language query in any language (the underlying models are multilingual)
-2. Optionally narrow by venue using the checkboxes
-3. Click **Search**
+2. Optionally narrow by **Venue** using the checkboxes
+3. Adjust the two sliders if you want to:
+   - **Retrieval candidates** — how many top-K papers the embedding stage hands to the reranker (default 1000, range 100–5000)
+   - **Final results** — how many top-K papers the reranker keeps as the final answer (default 100, range 10–500)
+4. Click **Search**
 
-The first search after a fresh start takes 30–60 seconds (vLLM warming up); subsequent searches finish in 10–30 seconds. Results are color-coded by reranker confidence (red → green, 0 → 1).
+Results appear under two tabs:
+
+- **List** — ranked cards. Each card shows the title (DOI link), authors, venue/year, keywords, abstract, and a colored score badge. The badge color is a linear red→green gradient based on the reranker score.
+- **Graph** — UMAP layout. The query sits at the center as a black star. Each paper's distance from the center encodes `1 − rerank_score`, while its angular direction preserves UMAP cluster structure (papers about similar topics cluster together). Node size and color also reflect the reranker score. Hover for metadata; click any node to open its DOI in a new tab.
+
+After warmup, a search typically takes 10–30 seconds (most of it is the reranker scoring 1000 candidates).
 
 ## Common commands
 
-```bash
-# Stop everything (preserves model cache and index)
-docker compose stop
-
-# Resume
-docker compose start
-
-# Tear down containers (keeps volumes)
-docker compose down
-
-# Wipe everything including model cache (rare; forces re-download)
-docker compose down -v
-
-# Watch logs
-docker compose logs -f
-
-# Watch GPU usage
+```bashStop everything (preserves model cache and index)
+docker compose stopResume
+docker compose startTear down containers (keeps volumes)
+docker compose downWipe everything including model cache (rare; forces re-download)
+docker compose down -vWatch logs
+docker compose logs -fWatch GPU usage
 watch -n 1 nvidia-smi
-```
 
-## Architecture
-
-```
-Browser ──► Gradio UI (app)
-              │
-              ├──► /v1/embeddings   Qwen3-Embedding-0.6B (vLLM)
-              │       └─► FAISS top-1000 retrieval (with venue filter)
-              │
-              └──► /v1/score        Qwen3-Reranker-8B (vLLM)
-                       └─► top-100 results (cross-encoder rescored)
-```
+## ArchitectureBrowser ──► Gradio UI (app)
+│
+├──► /v1/embeddings   Qwen3-Embedding-0.6B (vLLM)
+│       └─► FAISS top-K retrieval (with venue filter)
+│
+└──► /v1/score        Qwen3-Reranker-8B (vLLM)
+└─► top-N results (cross-encoder rescored)
+│
+├─► List view  (ranked cards)
+└─► Graph view (UMAP + radial layout)
 
 ## Data
 
@@ -132,13 +119,13 @@ Browser ──► Gradio UI (app)
 **Reranker scores are all near 0.5** — vLLM regression bug. Pin the image to `vllm/vllm-openai:v0.14.0` (the version specified in `compose.yaml`).
 
 **`Restarting (1)` on the app container** — usually a Python dependency conflict. Check logs:
-```bash
-docker compose logs --tail=80 app
-```
+```bashdocker compose logs --tail=80 app
 
 **`chown ... operation not permitted`** — happens on NFS mounts. The `compose.yaml` already uses Docker-managed named volumes (`hf_cache`, `paper_index`) to avoid this.
 
-**First search hangs for over a minute** — normal during initial CUDA graph compilation. Subsequent searches will be fast.
+**Graph tab is blank** — the iframe-embedded plotly view depends on inline scripts. If you see a blank panel, hard-reload the page (Ctrl+Shift+R) and check the browser console for CSP errors.
+
+**First search after long idle hangs for ~30s** — vLLM CUDA graph cache may have been evicted. Subsequent searches will be fast again.
 
 ## License
 
