@@ -1,4 +1,3 @@
-```markdown
 # HCI Paper Semantic Search
 
 Two-stage semantic search over 13,488 papers from seven major HCI conferences (CHI, UIST, CSCW, DIS, IUI, RecSys, UMAP).
