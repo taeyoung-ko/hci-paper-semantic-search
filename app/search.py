@@ -14,6 +14,9 @@ _index = faiss.read_index(str(INDEX_DIR / "sigchi.faiss"))
 with (INDEX_DIR / "sigchi_meta.jsonl").open(encoding="utf-8") as f:
     _papers = [json.loads(l) for l in f]
 
+# FAISS의 IndexFlatIP에서 reconstruct로 원본 벡터 복원 가능
+# (정규화된 상태로 저장되어 있음)
+
 
 def _doc_text(p: dict) -> str:
     title = (p.get("title") or "").strip()
@@ -24,18 +27,13 @@ def _doc_text(p: dict) -> str:
 
 
 def get_filter_options() -> dict:
-    """UI 초기화에 사용할 필터 옵션 데이터."""
     venues = sorted({p.get("venue", "") for p in _papers if p.get("venue")})
     years = [p.get("year") for p in _papers if isinstance(p.get("year"), int)]
     if years:
         year_min, year_max = min(years), max(years)
     else:
         year_min, year_max = 2000, 2026
-    return {
-        "venues": venues,
-        "year_min": year_min,
-        "year_max": year_max,
-    }
+    return {"venues": venues, "year_min": year_min, "year_max": year_max}
 
 
 def _passes_filter(p: dict, allowed_venues: set[str] | None,
@@ -55,40 +53,35 @@ def search(query: str,
            year_min: int = 0,
            year_max: int = 9999,
            retrieve_k: int = 1000,
-           rerank_k: int = 100) -> list[dict]:
+           rerank_k: int = 100) -> dict:
     """
-    Pre-filter semantics:
-      1) embed query
-      2) FAISS retrieve top-K
-      3) keep only papers passing (venue ∩ year) filter
-      4) rerank survivors with 8B
-      5) return top rerank_k
-
-    If filter is very narrow and survivors < rerank_k after step 3,
-    we widen the FAISS retrieval up to the entire index to give the
-    reranker more material to score.
+    Returns: {
+        "query_embedding": np.ndarray (D,),
+        "results": [paper dicts with rerank_score, embed_score, _vec],
+    }
+    The "_vec" field on each paper is its 1024-d normalized embedding,
+    used downstream for graph layout. It is NOT meant for serialization.
     """
     if not query.strip():
-        return []
+        return {"query_embedding": None, "results": []}
 
     venue_set = set(allowed_venues) if allowed_venues else None
 
-    # Stage 1: embed
-    q_emb = np.asarray([embed_query(query)], dtype="float32")
-    faiss.normalize_L2(q_emb)
+    # Stage 1: embed query
+    q_vec = np.asarray(embed_query(query), dtype="float32")
+    q_norm = q_vec.copy()
+    faiss.normalize_L2(q_norm.reshape(1, -1))
 
-    # Stage 2 + 3 + (adaptive widening): keep retrieving until enough survivors
-    # or the index is exhausted.
+    # Stage 2 + 3 + adaptive widening
     target_survivors = max(rerank_k, 100)
     n_total = _index.ntotal
     k = min(retrieve_k, n_total)
     survivors: list[dict] = []
-    seen_ids: set[int] = set()
 
     while True:
-        emb_scores, idxs = _index.search(q_emb, k)
+        emb_scores, idxs = _index.search(q_norm.reshape(1, -1), k)
         survivors = []
-        seen_ids = set()
+        seen_ids: set[int] = set()
         for s, i in zip(emb_scores[0], idxs[0]):
             if i < 0 or int(i) in seen_ids:
                 continue
@@ -98,14 +91,14 @@ def search(query: str,
                 continue
             row = dict(p)
             row["embed_score"] = float(s)
+            row["_idx"] = int(i)
             survivors.append(row)
         if len(survivors) >= target_survivors or k >= n_total:
             break
-        # Widen the net.
         k = min(k * 3, n_total)
 
     if not survivors:
-        return []
+        return {"query_embedding": q_norm, "results": []}
 
     # Stage 4: rerank
     docs = [_doc_text(p) for p in survivors]
@@ -113,6 +106,13 @@ def search(query: str,
     for p, s in zip(survivors, rerank_scores):
         p["rerank_score"] = s
 
-    # Stage 5: top-K
+    # Stage 5: top-k by rerank_score
     survivors.sort(key=lambda x: x["rerank_score"], reverse=True)
-    return survivors[:rerank_k]
+    top = survivors[:rerank_k]
+
+    # Attach embedding vectors for graph layout
+    for p in top:
+        v = _index.reconstruct(p["_idx"])
+        p["_vec"] = np.asarray(v, dtype="float32")
+
+    return {"query_embedding": q_norm, "results": top}
