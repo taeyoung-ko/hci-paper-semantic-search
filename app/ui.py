@@ -1,3 +1,25 @@
+# Monkey-patch gradio_client/utils.py to handle bool schema values
+# (Gradio 4.x bug: get_type() crashes on bool schema, e.g. additionalProperties=True)
+import gradio_client.utils as _gc_utils
+
+_gc_utils_get_type_orig = _gc_utils.get_type
+
+def _gc_utils_get_type_safe(schema):
+    if not isinstance(schema, dict):
+        return "Any"
+    return _gc_utils_get_type_orig(schema)
+
+_gc_utils.get_type = _gc_utils_get_type_safe
+
+_gc_utils_jsts_orig = _gc_utils._json_schema_to_python_type
+
+def _gc_utils_jsts_safe(schema, defs=None):
+    if not isinstance(schema, dict):
+        return "Any"
+    return _gc_utils_jsts_orig(schema, defs)
+
+_gc_utils._json_schema_to_python_type = _gc_utils_jsts_safe
+
 import html
 import textwrap
 import threading
@@ -10,6 +32,7 @@ import plotly.io as pio
 import umap
 
 from search import search, get_filter_options
+from bib_export import write_bib_to_tempfile
 
 _OPTS = get_filter_options()
 _VENUES = _OPTS["venues"]
@@ -1229,6 +1252,8 @@ with gr.Blocks(title="HCI Paper Semantic Search", css='.hcips-hidden { display: 
 
     with gr.Accordion("My Collection (empty)", open=False) as collection_accordion:
         collection_html = gr.HTML(value=_render_collection([]))
+        export_btn = gr.Button("Export .bib", size="sm")
+        export_file = gr.File(label="Download", visible=False, interactive=False)
 
     status = gr.HTML()
 
@@ -1303,5 +1328,15 @@ with gr.Blocks(title="HCI Paper Semantic Search", css='.hcips-hidden { display: 
         outputs=[collection_state],
     )
 
+    def _do_export(collection):
+        path = write_bib_to_tempfile(collection or [])
+        return gr.update(value=path, visible=True)
+
+    export_btn.click(
+        fn=_do_export,
+        inputs=[collection_state],
+        outputs=[export_file],
+    )
+
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    demo.launch(server_name="0.0.0.0", server_port=7860, show_api=False)
