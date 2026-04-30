@@ -4,7 +4,6 @@
 *.csv
 .collect_checkpoint.json
 .collect_checkpoint_s2.json    # <-- 추가됨
-sigchi_conf_doi.jsonl          # <-- 추가됨 (모든 jsonl을 막으려면 *.jsonl 사용)
 uist_papers.json               # <-- 추가됨
 .prefix_scan_cache/
 
