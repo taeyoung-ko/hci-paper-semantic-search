@@ -8,9 +8,9 @@ services:
       - --port
       - "8000"
       - --max-model-len
-      - "8192"
+      - "2048"
       - --gpu-memory-utilization
-      - "0.10"
+      - "${EMBEDDER_GPU_UTIL:-0.10}"
       - --served-model-name
       - qwen3-embed
     ipc: host
@@ -45,9 +45,9 @@ services:
       - --runner
       - pooling
       - --max-model-len
-      - "8192"
+      - "2048"
       - --gpu-memory-utilization
-      - "0.30"
+      - "${RERANKER_GPU_UTIL:-0.30}"
       - --served-model-name
       - qwen3-rerank
       - --hf-overrides

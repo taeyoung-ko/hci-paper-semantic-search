@@ -59,14 +59,13 @@ def search(query: str,
            year_min: int = 0,
            year_max: int = 9999,
            retrieve_k: int = 1000,
-           rerank_k: int = 100) -> dict:
+           rerank_k: int = 100) -> list[dict]:
     """Two-stage mode-aware semantic search.
 
-    Returns:
-        {"query_embedding": np.ndarray, "results": [paper dicts]}
+    Returns list of paper dicts with rerank_score attached.
     """
     if not query.strip():
-        return {"query_embedding": None, "results": []}
+        return []
     if mode not in MODES:
         raise ValueError(f"Unknown mode: {mode}")
     if mode not in _indexes:
@@ -101,28 +100,20 @@ def search(query: str,
                 continue
             row = dict(p)
             row["embed_score"] = float(s)
-            row["_idx"] = int(i)
             survivors.append(row)
         if len(survivors) >= target_survivors or k >= n_total:
             break
         k = min(k * 3, n_total)
 
     if not survivors:
-        return {"query_embedding": q_norm, "results": []}
+        return []
 
-    # Stage 4: rerank (mode-aware)
+    # Stage 3: rerank (mode-aware)
     docs = [_doc_text(p) for p in survivors]
     rerank_scores = rerank(query, docs, mode=mode, batch_size=32)
     for p, s in zip(survivors, rerank_scores):
         p["rerank_score"] = s
 
-    # Stage 5: top-K
+    # Stage 4: top-K
     survivors.sort(key=lambda x: x["rerank_score"], reverse=True)
-    top = survivors[:rerank_k]
-
-    # Attach embedding vectors for graph layout
-    for p in top:
-        v = index.reconstruct(p["_idx"])
-        p["_vec"] = np.asarray(v, dtype="float32")
-
-    return {"query_embedding": q_norm, "results": top}
+    return survivors[:rerank_k]

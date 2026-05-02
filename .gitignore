@@ -1,33 +1,31 @@
-# Bulk metadata-collection artifacts
-*.bak
-*.xlsx
-*.csv
-.collect_checkpoint.json
-.collect_checkpoint_s2.json    # <-- 추가됨
-uist_papers.json               # <-- 추가됨
-.prefix_scan_cache/
-
-# Notebook / scratch
-*.ipynb
-*.ipynb_checkpoints/
-
-# Standalone scripts not part of the search app
-get_metadata.py
-semanticscholarapi.py          # <-- 추가됨
-
-# Build artifacts in named docker volumes
-hf_cache/
-index/
-
 # Python
 __pycache__/
 *.pyc
+*.egg-info/
+.venv/
 
-# Editor / OS
+# Node
+node_modules/
+app/frontend/dist/
+
+# IDE
 .vscode/
 .idea/
+
+# Data
+*.faiss
+sigchi_meta.jsonl
+
+# OS
 .DS_Store
 
-# Local env
-.env
-hci-paper-semantic-search/
+# Working files
+*.bak
+.collect_checkpoint*.json
+.prefix_scan_cache/
+playground.ipynb
+get_metadata.py
+semanticscholarapi.py
+sigchi_conf_stem_template.csv
+uist_papers.json
+compose.yaml.bak
