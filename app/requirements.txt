@@ -5,3 +5,4 @@ requests>=2.32
 tqdm>=4.66
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30
+bertopic>=0.16,<0.18

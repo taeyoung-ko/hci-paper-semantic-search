@@ -4,6 +4,7 @@ import { QueryBar, UnifiedQueryBar, VenueFilter, AdvancedOptions } from "./compo
 import ResultTabs from "./components/ResultTabs";
 import Collection from "./components/Collection";
 import ManageData from "./components/AddVenue";
+import Trends from "./components/Trends";
 
 // ── localStorage helpers ──
 const STORAGE_KEYS = {
@@ -260,6 +261,12 @@ export default function App() {
               Related Work
             </button>
             <button
+              className={`nav-tab ${page === "trends" ? "active" : ""}`}
+              onClick={() => setPage("trends")}
+            >
+              Trends
+            </button>
+            <button
               className={`nav-tab ${page === "collection" ? "active" : ""}`}
               onClick={() => setPage("collection")}
             >
@@ -275,7 +282,7 @@ export default function App() {
         </div>
       </nav>
 
-      {(page === "unified" || page === "search") && filterOpts.venues.length === 0 && (
+      {(page === "unified" || page === "search" || page === "trends") && filterOpts.venues.length === 0 && (
         <div className="no-data-message">
           <p>
             No paper data available yet.{" "}
@@ -383,6 +390,18 @@ export default function App() {
             )}
           </main>
         </>
+      )}
+
+      {page === "trends" && filterOpts.venues.length > 0 && (
+        <Trends
+          venues={filterOpts.venues}
+          selectedVenues={selectedVenues}
+          toggleVenue={toggleVenue}
+          yearMinAvailable={filterOpts.year_min}
+          yearMaxAvailable={filterOpts.year_max}
+          collectedDois={collectedDois}
+          onToggleStar={toggleStar}
+        />
       )}
 
       {page === "collection" && (

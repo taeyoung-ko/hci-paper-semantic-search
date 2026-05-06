@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from search import search, get_filter_options, reload_indexes
 from bib_export import write_bib_to_tempfile
+from trends import build_trends, get_topic_papers, clear_cache as clear_trends_cache
 
 app = FastAPI(title="HCI Paper Semantic Search")
 
@@ -183,6 +184,35 @@ def do_search(req: SearchRequest):
     return {"tabs": tabs, "combined": combined, "errors": errors}
 
 
+# ── Trends ──
+
+
+class TrendsRequest(BaseModel):
+    venues: list[str] = Field(default_factory=list)
+    year_min: int = 0
+    year_max: int = 9999
+    force: bool = False
+
+
+@app.post("/api/trends")
+def do_trends(req: TrendsRequest):
+    venues = req.venues if req.venues else None
+    return build_trends(venues, req.year_min, req.year_max, force=req.force)
+
+
+class TopicPapersRequest(BaseModel):
+    venues: list[str] = Field(default_factory=list)
+    year_min: int = 0
+    year_max: int = 9999
+    topic_id: int
+
+
+@app.post("/api/trends/topic-papers")
+def do_topic_papers(req: TopicPapersRequest):
+    venues = req.venues if req.venues else None
+    return get_topic_papers(venues, req.year_min, req.year_max, req.topic_id)
+
+
 # ── BibTeX export ──
 
 class ExportRequest(BaseModel):
@@ -312,6 +342,7 @@ def _run_add_venues(email: str, entries: list[dict], skip_existing: bool = False
 
             reload_indexes()
             _cache.clear()
+            clear_trends_cache()
             _set(step_label="Complete", step_progress=1.0,
                  step_detail=f"{total_new} papers indexed")
 

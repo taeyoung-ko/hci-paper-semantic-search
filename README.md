@@ -4,6 +4,7 @@ Two-stage semantic search over HCI conference papers, with a built-in collector 
 
 - **Similar Papers** — paste an abstract or paper description, find papers like it (`topic` mode).
 - **Related Work** — fill in your paper's components (Background / Gap / Solution / Method / Findings); each runs as its own instruction-tuned search and a **Combined** tab fuses the rankings via RRF (k = 60).
+- **Trends** — BERTopic clustering on the current venue × year subset; stacked-area visualization of topic frequency over time with click-to-list papers per topic.
 - **Manage Data** — pivot table UI to collect papers for any ACM venue × year. Auto-rebuilds search indexes on completion.
 
 Pipeline: embed (Qwen3-Embedding-0.6B) → FAISS top-K → rerank (Qwen3-Reranker-8B cross-encoder) → top-N. Star papers, attach notes, export to `.bib`.
@@ -64,6 +65,17 @@ Fill any of the five component boxes — empty boxes are skipped, filled ones ru
 
 Two or more boxes → a **Combined** tab is added (Reciprocal Rank Fusion, k = 60).
 
+### Trends
+
+Topic distribution over time for the current venue × year subset.
+
+- Filter at top of the page: venue chips + year-range inputs (year range is local to Trends; the venue selection is shared with the search pages).
+- **Compute trends** runs BERTopic (UMAP + HDBSCAN) directly on the precomputed `topic`-mode FAISS embeddings — no re-embedding, no LLM, no external API. Topic count is auto-discovered (typical: 20–80).
+- Output: stacked area chart of topic frequencies per year + a sidebar listing topic keywords. Hover any year to see per-topic counts inline at each slice's center (no floating tooltip — colored dots match topic colors).
+- Toggle **Normalize per year (%)** to compare topic shares regardless of total volume.
+- Click a topic in the sidebar to load that topic's papers below the chart in the same card layout as search results (score hidden); ★ adds to collection.
+- **Recompute** button forces a fresh BERTopic fit (ignores cache). The first fit on ~5000 papers takes 30–90 s; subsequent same-filter requests are served from cache instantly.
+
 ### Manage Data
 
 Pivot table of `Venue × Year`. Each cell carries a stem DOI for Crossref proceedings scan; each row optionally carries a PACM ISSN + track for OpenAlex journal scan (e.g., CSCW → ISSN `2573-0142`, track `cscw`). Tick the cells you want, then **Collect**.
@@ -105,13 +117,15 @@ Query inputs, search results, and collection are saved to `localStorage`. Refres
 ```
 Browser (React)
   │
-  ├── /api/search             ──► FastAPI ──► Qwen3-Embedding-0.6B (vLLM)  ──► FAISS top-K per mode
-  │                                       └─► Qwen3-Reranker-8B   (vLLM)  ──► top-N cross-encoder
-  ├── /api/add-venues         ──► FastAPI ──► collector ──► Crossref + OpenAlex
-  │                                                    └─► JSONL append + reindex
-  ├── /api/add-venue/status   ──► poll collection progress
-  ├── /api/export-bib         ──► BibTeX file
-  └── /api/filter-options     ──► venue list, year range
+  ├── /api/search                ──► FastAPI ──► Qwen3-Embedding-0.6B (vLLM) ──► FAISS top-K per mode
+  │                                          └─► Qwen3-Reranker-8B   (vLLM) ──► top-N cross-encoder
+  ├── /api/trends                ──► FastAPI ──► BERTopic (UMAP + HDBSCAN) on FAISS embeddings (cached)
+  ├── /api/trends/topic-papers   ──► papers for the clicked topic (cache lookup)
+  ├── /api/add-venues            ──► FastAPI ──► collector ──► Crossref + OpenAlex
+  │                                                       └─► JSONL append + reindex
+  ├── /api/add-venue/status      ──► poll collection progress
+  ├── /api/export-bib            ──► BibTeX file
+  └── /api/filter-options        ──► venue list, year range
 ```
 
 ## Common commands

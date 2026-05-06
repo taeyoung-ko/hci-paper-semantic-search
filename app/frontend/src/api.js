@@ -16,6 +16,26 @@ export async function searchPapers(params) {
   return res.json();
 }
 
+export async function fetchTrends(params) {
+  const res = await fetch(`${API}/trends`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Trends failed");
+  return res.json();
+}
+
+export async function fetchTopicPapers(params) {
+  const res = await fetch(`${API}/trends/topic-papers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error("Topic papers fetch failed");
+  return res.json();
+}
+
 export async function exportBib(collection) {
   const res = await fetch(`${API}/export-bib`, {
     method: "POST",
