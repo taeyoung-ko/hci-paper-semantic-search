@@ -1,0 +1,310 @@
+[
+  {
+    "venue": "CHI",
+    "year": 2020,
+    "stem_doi": "10.1145/3313831",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2021,
+    "stem_doi": "10.1145/3411764",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2022,
+    "stem_doi": "10.1145/3491102",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2023,
+    "stem_doi": "10.1145/3544548",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2024,
+    "stem_doi": "10.1145/3613904",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2025,
+    "stem_doi": "10.1145/3706598",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CHI",
+    "year": 2026,
+    "stem_doi": "10.1145/3772318",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2020,
+    "stem_doi": "10.1145/3379337",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2021,
+    "stem_doi": "10.1145/3472749",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2022,
+    "stem_doi": "10.1145/3526113",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2023,
+    "stem_doi": "10.1145/3586183",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2024,
+    "stem_doi": "10.1145/3654777",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UIST",
+    "year": 2025,
+    "stem_doi": "10.1145/3746059",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "CSCW",
+    "year": 2020,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "CSCW",
+    "year": 2021,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "CSCW",
+    "year": 2022,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "CSCW",
+    "year": 2023,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "CSCW",
+    "year": 2024,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "CSCW",
+    "year": 2025,
+    "stem_doi": "",
+    "pacm_issn": "2573-0142",
+    "pacm_track": "CSCW"
+  },
+  {
+    "venue": "DIS",
+    "year": 2020,
+    "stem_doi": "10.1145/3357236",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "DIS",
+    "year": 2021,
+    "stem_doi": "10.1145/3461778",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "DIS",
+    "year": 2022,
+    "stem_doi": "10.1145/3532106",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "DIS",
+    "year": 2023,
+    "stem_doi": "10.1145/3563657",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "DIS",
+    "year": 2024,
+    "stem_doi": "10.1145/3643834",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "DIS",
+    "year": 2025,
+    "stem_doi": "10.1145/3715336",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2020,
+    "stem_doi": "10.1145/3377325",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2021,
+    "stem_doi": "10.1145/3397481",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2022,
+    "stem_doi": "10.1145/3490099",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2023,
+    "stem_doi": "10.1145/3581641",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2024,
+    "stem_doi": "10.1145/3640543",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2025,
+    "stem_doi": "10.1145/3708359",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "IUI",
+    "year": 2026,
+    "stem_doi": "10.1145/3742413",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2020,
+    "stem_doi": "10.1145/3383313",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2021,
+    "stem_doi": "10.1145/3460231",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2022,
+    "stem_doi": "10.1145/3523227",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2023,
+    "stem_doi": "10.1145/3604915",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2024,
+    "stem_doi": "10.1145/3640457",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "RecSys",
+    "year": 2025,
+    "stem_doi": "10.1145/3705328",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2020,
+    "stem_doi": "10.1145/3340631",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2021,
+    "stem_doi": "10.1145/3450613",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2022,
+    "stem_doi": "10.1145/3503252",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2023,
+    "stem_doi": "10.1145/3565472",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2024,
+    "stem_doi": "10.1145/3627043",
+    "pacm_issn": "",
+    "pacm_track": ""
+  },
+  {
+    "venue": "UMAP",
+    "year": 2025,
+    "stem_doi": "10.1145/3699682",
+    "pacm_issn": "",
+    "pacm_track": ""
+  }
+]

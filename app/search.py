@@ -10,17 +10,41 @@ from api_clients import embed_query, rerank, MODES, DEFAULT_MODE
 
 INDEX_DIR = Path(os.environ["INDEX_DIR"])
 
-# Lazy-load all mode indexes at import; small enough to fit in memory.
 _indexes: dict[str, faiss.Index] = {}
-for mode in MODES:
-    path = INDEX_DIR / f"sigchi_{mode}.faiss"
-    if path.exists():
-        _indexes[mode] = faiss.read_index(str(path))
-    else:
-        print(f"[search] WARNING: missing index for mode={mode}: {path}")
+_papers: list[dict] = []
 
-with (INDEX_DIR / "sigchi_meta.jsonl").open(encoding="utf-8") as f:
-    _papers = [json.loads(l) for l in f]
+
+def _load_indexes():
+    """Load (or reload) all mode indexes and metadata from disk."""
+    global _indexes, _papers
+    new_indexes = {}
+    for mode in MODES:
+        path = INDEX_DIR / f"sigchi_{mode}.faiss"
+        if path.exists():
+            new_indexes[mode] = faiss.read_index(str(path))
+        else:
+            print(f"[search] WARNING: missing index for mode={mode}: {path}")
+
+    meta_path = INDEX_DIR / "sigchi_meta.jsonl"
+    if meta_path.exists():
+        with meta_path.open(encoding="utf-8") as f:
+            new_papers = [json.loads(l) for l in f]
+    else:
+        new_papers = []
+
+    _indexes = new_indexes
+    _papers = new_papers
+    print(f"[search] loaded {len(_papers)} papers, "
+          f"{len(_indexes)}/{len(MODES)} indexes")
+
+
+def reload_indexes():
+    """Public interface to reload indexes after rebuild."""
+    _load_indexes()
+
+
+# Initial load
+_load_indexes()
 
 
 def _doc_text(p: dict) -> str:
@@ -60,10 +84,6 @@ def search(query: str,
            year_max: int = 9999,
            retrieve_k: int = 1000,
            rerank_k: int = 100) -> list[dict]:
-    """Two-stage mode-aware semantic search.
-
-    Returns list of paper dicts with rerank_score attached.
-    """
     if not query.strip():
         return []
     if mode not in MODES:
@@ -76,12 +96,10 @@ def search(query: str,
     venue_set = set(allowed_venues) if allowed_venues else None
     index = _indexes[mode]
 
-    # Stage 1: query embedding (mode-aware)
     q_vec = np.asarray(embed_query(query, mode=mode), dtype="float32")
     q_norm = q_vec.copy()
     faiss.normalize_L2(q_norm.reshape(1, -1))
 
-    # Stage 2 + 3: FAISS retrieve + filter (with adaptive widening)
     target_survivors = max(rerank_k, 100)
     n_total = index.ntotal
     k = min(retrieve_k, n_total)
@@ -108,12 +126,10 @@ def search(query: str,
     if not survivors:
         return []
 
-    # Stage 3: rerank (mode-aware)
     docs = [_doc_text(p) for p in survivors]
     rerank_scores = rerank(query, docs, mode=mode, batch_size=32)
     for p, s in zip(survivors, rerank_scores):
         p["rerank_score"] = s
 
-    # Stage 4: top-K
     survivors.sort(key=lambda x: x["rerank_score"], reverse=True)
     return survivors[:rerank_k]

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 const COMPONENTS = [
   { key: "background", label: "Background", placeholder: "The research background or domain context your work sits in" },
@@ -11,16 +11,24 @@ const COMPONENTS = [
 function AutoTextarea({ value, onChange, onKeyDown, placeholder, id }) {
   const ref = useRef(null);
 
+  const resize = useCallback(() => {
+    const el = ref.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
+  }, []);
+
+  useEffect(() => {
+    resize();
+  }, [value, resize]);
+
   const handleInput = useCallback(
     (e) => {
       onChange(e);
-      const el = ref.current;
-      if (el) {
-        el.style.height = "auto";
-        el.style.height = el.scrollHeight + "px";
-      }
+      resize();
     },
-    [onChange]
+    [onChange, resize]
   );
 
   return (
@@ -60,6 +68,41 @@ export function QueryBar({ queries, setQuery, onSearch, searching, beforeFields,
             />
           </div>
         ))}
+      </div>
+      {children}
+      <button
+        className="search-btn"
+        onClick={onSearch}
+        disabled={searching}
+      >
+        {searching ? "Searching..." : "Search"}
+      </button>
+    </div>
+  );
+}
+
+export function UnifiedQueryBar({ query, setQuery, onSearch, searching, beforeFields, children }) {
+  const handleKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSearch();
+    }
+  };
+
+  return (
+    <div className="query-bar">
+      {beforeFields}
+      <div className="query-fields">
+        <div className="query-field">
+          <label htmlFor="q-unified">Search</label>
+          <AutoTextarea
+            id="q-unified"
+            placeholder="What are you looking for? Semantic search over title + abstract."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKey}
+          />
+        </div>
       </div>
       {children}
       <button

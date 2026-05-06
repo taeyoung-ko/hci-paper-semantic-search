@@ -22,17 +22,19 @@ export default function ResultTabs({ data, collectedDois, onToggleStar }) {
 
   return (
     <div>
-      <div className="tabs-bar">
-        {allTabs.map((tab, idx) => (
-          <button
-            key={tab.key}
-            className={`tab-btn ${idx === activeIdx ? "active" : ""}`}
-            onClick={() => setActiveIdx(idx)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {allTabs.length > 1 && (
+        <div className="tabs-bar">
+          {allTabs.map((tab, idx) => (
+            <button
+              key={tab.key}
+              className={`tab-btn ${idx === activeIdx ? "active" : ""}`}
+              onClick={() => setActiveIdx(idx)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div>
         {activeTab.results.map((paper, i) => (

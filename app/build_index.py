@@ -26,8 +26,6 @@ DATA_PATH = Path(os.environ["DATA_PATH"])
 INDEX_DIR = Path(os.environ["INDEX_DIR"])
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-ALLOWED_VENUES = {"CHI", "UIST", "CSCW", "DIS", "IUI", "RecSys", "UMAP"}
-
 
 def build_text(p: dict) -> str:
     title = (p.get("title") or "").strip()
@@ -38,26 +36,30 @@ def build_text(p: dict) -> str:
 
 
 def main() -> None:
+    if not DATA_PATH.exists():
+        print(f"[build_index] {DATA_PATH} not found. "
+              f"Use 'Add Venue' in the UI to collect papers first.")
+        return
+
     papers, texts = [], []
     venue_counts: dict[str, int] = {}
     with DATA_PATH.open(encoding="utf-8") as f:
         for line in f:
             p = json.loads(line)
-            venue = p.get("venue", "")
-            if venue not in ALLOWED_VENUES:
-                continue
             text = build_text(p)
             if not text:
                 continue
             papers.append(p)
             texts.append(text)
+            venue = p.get("venue", "?")
             venue_counts[venue] = venue_counts.get(venue, 0) + 1
 
-    print(f"[build_index] {len(texts)} papers from venues:")
+    print(f"[build_index] {len(texts)} papers from {len(venue_counts)} venues:")
     for venue, count in sorted(venue_counts.items(), key=lambda x: -x[1]):
         print(f"  {venue:<10} {count:>6}")
     if not texts:
-        raise SystemExit("No papers matched ALLOWED_VENUES.")
+        print("[build_index] No papers with text found. Skipping.")
+        return
 
     # Save shared metadata once
     meta_path = INDEX_DIR / "sigchi_meta.jsonl"

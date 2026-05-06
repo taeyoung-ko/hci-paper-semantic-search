@@ -21,6 +21,11 @@ export default function ResultCard({
   isStarred,
   onToggleStar,
   combined = false,
+  selectable = false,
+  isSelected = false,
+  onToggleSelect,
+  hideScore = false,
+  children,
 }) {
   const doi = paper.doi || "";
   const score = combined
@@ -31,12 +36,23 @@ export default function ResultCard({
     <div className="result-card">
       <div className="result-rank-col">
         <div className="result-rank">{rank}</div>
-        <span className="score-badge" style={scoreColor(combined ? score / 0.082 : score)}>
-          {combined ? score.toFixed(4) : score.toFixed(3)}
-        </span>
+        {!hideScore && (
+          <span className="score-badge" style={scoreColor(combined ? score / 0.082 : score)}>
+            {combined ? score.toFixed(4) : score.toFixed(3)}
+          </span>
+        )}
       </div>
       <div className="result-body">
         <div className="result-title-row">
+          {selectable && (
+            <input
+              type="checkbox"
+              className="select-check"
+              checked={isSelected}
+              onChange={onToggleSelect}
+              aria-label="Select for export"
+            />
+          )}
           <button
             className={`star-btn ${isStarred ? "active" : ""}`}
             onClick={onToggleStar}
@@ -92,6 +108,8 @@ export default function ResultCard({
         {paper.abstract && (
           <div className="result-abstract">{paper.abstract}</div>
         )}
+
+        {children}
       </div>
     </div>
   );

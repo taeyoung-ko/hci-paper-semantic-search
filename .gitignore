@@ -1,32 +1,33 @@
-# Python
-__pycache__/
-*.pyc
-*.egg-info/
-.venv/
+# Allowlist mode: ignore everything by default, !unignore only what to track.
 
-# Node
-node_modules/
-app/frontend/dist/
+*
 
-# IDE
-.vscode/
-.idea/
+# Top-level
+!.gitignore
+!.dockerignore
+!.env.example
+!LICENSE
+!README.md
+!compose.yaml
 
-# Data
-*.faiss
-sigchi_meta.jsonl
+# app/
+!app/
+!app/Dockerfile
+!app/*.py
+!app/requirements.txt
 
-# OS
-.DS_Store
+# app/frontend/
+!app/frontend/
+!app/frontend/index.html
+!app/frontend/package.json
+!app/frontend/package-lock.json
+!app/frontend/vite.config.js
 
-# Working files
-*.bak
-.collect_checkpoint*.json
-.prefix_scan_cache/
-playground.ipynb
-get_metadata.py
-semanticscholarapi.py
-sigchi_conf_stem_template.csv
-uist_papers.json
-compose.yaml.bak
-retry.py
+# app/frontend/src/
+!app/frontend/src/
+!app/frontend/src/*.js
+!app/frontend/src/*.jsx
+!app/frontend/src/*.css
+!app/frontend/src/*.json
+!app/frontend/src/components/
+!app/frontend/src/components/*.jsx

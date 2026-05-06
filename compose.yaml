@@ -84,7 +84,7 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      - ./data:/app/data:ro
+      - ./data:/app/data
       - paper_index:/app/index
     depends_on:
       embedder:
