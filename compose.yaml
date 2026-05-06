@@ -2,20 +2,21 @@ services:
   embedder:
     image: vllm/vllm-openai:v0.14.0
     container_name: vllm-embedder
+    entrypoint: ["/scripts/start-vllm.sh"]
     command:
+      - "${EMBEDDER_HEADROOM_GB:-3}"      # weights 1.2GB + KV cache + overhead
       - --model
       - Qwen/Qwen3-Embedding-0.6B
       - --port
       - "8000"
       - --max-model-len
       - "2048"
-      - --gpu-memory-utilization
-      - "${EMBEDDER_GPU_UTIL:-0.10}"
       - --served-model-name
       - qwen3-embed
     ipc: host
     shm_size: "8gb"
     volumes:
+      - ./scripts:/scripts:ro
       - hf_cache:/root/.cache/huggingface
     environment:
       HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
@@ -37,7 +38,9 @@ services:
   reranker:
     image: vllm/vllm-openai:v0.14.0
     container_name: vllm-reranker
+    entrypoint: ["/scripts/start-vllm.sh"]
     command:
+      - "${RERANKER_HEADROOM_GB:-22}"     # weights ~16GB + KV cache + overhead
       - --model
       - Qwen/Qwen3-Reranker-8B
       - --port
@@ -46,8 +49,6 @@ services:
       - pooling
       - --max-model-len
       - "2048"
-      - --gpu-memory-utilization
-      - "${RERANKER_GPU_UTIL:-0.30}"
       - --served-model-name
       - qwen3-rerank
       - --hf-overrides
@@ -55,6 +56,7 @@ services:
     ipc: host
     shm_size: "8gb"
     volumes:
+      - ./scripts:/scripts:ro
       - hf_cache:/root/.cache/huggingface
     environment:
       HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}

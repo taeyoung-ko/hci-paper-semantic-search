@@ -10,6 +10,10 @@
 !README.md
 !compose.yaml
 
+# scripts/
+!scripts/
+!scripts/*.sh
+
 # app/
 !app/
 !app/Dockerfile

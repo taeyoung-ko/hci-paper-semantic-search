@@ -13,7 +13,7 @@ Runs locally via Docker Compose (embedder, reranker, app).
 
 ## Requirements
 
-- NVIDIA GPU, 40 GB+ VRAM
+- NVIDIA GPU, **30 GB+ VRAM recommended** (embedder ~3 GB + reranker ~22 GB headroom; see [GPU memory tuning](#gpu-memory-tuning))
 - Docker 24+ with NVIDIA Container Toolkit
 - ~40 GB free disk for model cache
 
@@ -38,12 +38,33 @@ docker compose run --rm app python build_index.py   # ~5–7 min for 6 mode-awar
 
 ### GPU memory tuning
 
-Default values work on 40 GB+ GPUs. Adjust via `.env` in the project root:
+The vLLM containers auto-detect the host GPU's total memory and compute
+`--gpu-memory-utilization` from the model's required headroom (in GB).
+You don't need to set anything for typical setups — different GPUs
+(30 GB / 40 GB / 80 GB / …) just work.
+
+Defaults are wired in [compose.yaml](compose.yaml):
+
+| service | headroom (GB) | weights + KV cache + overhead |
+|---|---|---|
+| embedder | 3 | Qwen3-Embedding-0.6B (~1.2 GB) |
+| reranker | 22 | Qwen3-Reranker-8B (~16 GB) |
+
+Override per-service via `.env` if needed:
 
 ```env
-EMBEDDER_GPU_UTIL=0.05
-RERANKER_GPU_UTIL=0.20
+EMBEDDER_HEADROOM_GB=2
+RERANKER_HEADROOM_GB=20
 ```
+
+If a service's headroom > GPU total memory, vLLM will fail at startup
+with an out-of-memory error. The total budget needs to fit:
+
+- embedder + reranker on a single GPU ≈ **25 GB** (3 + 22).
+- A **30 GB+ GPU** is recommended for comfortable headroom and a small
+  KV-cache buffer.
+- 24 GB GPUs (e.g., RTX 3090/4090) cannot host the 8B reranker as-is —
+  consider using a smaller reranker or splitting onto two GPUs.
 
 ## Usage
 
