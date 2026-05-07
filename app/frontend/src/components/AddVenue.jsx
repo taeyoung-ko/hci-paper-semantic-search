@@ -313,7 +313,7 @@ export default function ManageData({ onCollectComplete }) {
                 );
               })}
               <th className="th-add-col">
-                <button className="add-col-btn" onClick={addYearCol} disabled={running}>+</button>
+                <button className="add-col-btn" onClick={addYearCol} disabled={running}>+ Add year</button>
               </th>
             </tr>
           </thead>
@@ -400,7 +400,7 @@ export default function ManageData({ onCollectComplete }) {
             })}
             <tr className="add-row-tr">
               <td className="td-add-row" colSpan={years.length + 4}>
-                <button className="add-row-btn" onClick={addVenueRow} disabled={running}>+ Add venue</button>
+                <button className="add-col-btn" onClick={addVenueRow} disabled={running}>+ Add venue</button>
               </td>
             </tr>
           </tbody>

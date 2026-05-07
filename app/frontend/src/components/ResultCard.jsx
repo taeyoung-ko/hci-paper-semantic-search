@@ -1,9 +1,10 @@
 function scoreColor(score) {
   const s = Math.max(0, Math.min(1, score));
-  const hue = Math.round(120 * s);
+  // Hue red → green: 0° (#6E4748 burgundy) → 116° (forest green, accent)
+  const hue = 116 * s;
   return {
-    background: `hsl(${hue}, 65%, 50%)`,
-    color: "#fff",
+    background: `hsl(${hue}, 22%, 36%)`,
+    color: "#ffffff",
   };
 }
 
@@ -32,8 +33,21 @@ export default function ResultCard({
     ? paper.rrf_score || 0
     : paper.rerank_score || 0;
 
+  const handleCardClick = (e) => {
+    if (!selectable || !onToggleSelect) return;
+    // Don't toggle when clicking on interactive descendants
+    if (e.target.closest("a, button, textarea, input, label")) return;
+    onToggleSelect();
+  };
+
+  const cardClasses = [
+    "result-card",
+    selectable ? "result-card-selectable" : "",
+    selectable && isSelected ? "result-card-selected" : "",
+  ].filter(Boolean).join(" ");
+
   return (
-    <div className="result-card">
+    <div className={cardClasses} onClick={handleCardClick}>
       <div className="result-rank-col">
         <div className="result-rank">{rank}</div>
         {!hideScore && (
@@ -44,15 +58,6 @@ export default function ResultCard({
       </div>
       <div className="result-body">
         <div className="result-title-row">
-          {selectable && (
-            <input
-              type="checkbox"
-              className="select-check"
-              checked={isSelected}
-              onChange={onToggleSelect}
-              aria-label="Select for export"
-            />
-          )}
           <button
             className={`star-btn ${isStarred ? "active" : ""}`}
             onClick={onToggleStar}

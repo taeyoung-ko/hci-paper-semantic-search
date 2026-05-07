@@ -14,10 +14,10 @@ import { VenueFilter } from "./SearchForm";
 import ResultCard from "./ResultCard";
 
 const COLORS = [
-  "#2c5282", "#9b2c2c", "#276749", "#744210", "#553c9a",
-  "#2c7a7b", "#9c4221", "#22543d", "#b7791f", "#3182ce",
-  "#c53030", "#38a169", "#dd6b20", "#805ad5", "#319795",
-  "#e53e3e", "#48bb78", "#ed8936", "#9f7aea", "#4fd1c5",
+  "#4b6e48", "#7a5230", "#3a5a7a", "#7d3a3a", "#5a4778",
+  "#3a6e6a", "#7d5a30", "#2d4d2a", "#a07e2e", "#3a527a",
+  "#9a3a3a", "#5a8a5a", "#b08a3a", "#5a3a7a", "#3a7a8a",
+  "#a04a5a", "#5a9a5a", "#a06e2e", "#7a4a8a", "#4a8a9a",
 ];
 
 const colorFor = (i) => COLORS[i % COLORS.length];
@@ -238,10 +238,10 @@ export default function Trends({
                 onMouseMove={(s) => setHoveredYear(s?.activeLabel ?? null)}
                 onMouseLeave={() => setHoveredYear(null)}
               >
-                <CartesianGrid strokeDasharray="2 4" stroke="#e4e2dd" />
-                <XAxis dataKey="year" stroke="#6b6862" />
+                <CartesianGrid strokeDasharray="2 4" stroke="#d8d4c4" />
+                <XAxis dataKey="year" stroke="#898989" />
                 <YAxis
-                  stroke="#6b6862"
+                  stroke="#898989"
                   tickFormatter={(v) => normalize ? `${v.toFixed(0)}%` : v}
                 />
                 <Legend wrapperStyle={{ display: "none" }} />
@@ -316,7 +316,7 @@ export default function Trends({
                             dy={3.5}
                             fontSize={10.5}
                             fontWeight={600}
-                            fill="#1a1917"
+                            fill="#2a2a2a"
                             stroke="#fff"
                             strokeWidth={3}
                             paintOrder="stroke"
